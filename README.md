@@ -1,0 +1,1 @@
+Webscraper script for the Order History page on TCGPlayer for use with the Tampermonkey Chrome extension.
