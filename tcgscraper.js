@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TGC Order Scraper
 // @namespace    http://tampermonkey.net/
-// @version      2025-02-06
+// @version      2025-02-17
 // @description  Scrape order info from TCGPlayer Order History
 // @author       Dan Sztanga
 // @match        https://store.tcgplayer.com/myaccount/orderhistory
@@ -12,25 +12,29 @@
 (function() {
     'use strict';
 
-    const orders = [...document.getElementsByClassName("orderWrap")];
+    //loop through oderWrap elements to pull general order info into object
+    const ordersHTML = [...document.getElementsByClassName("orderWrap")].map(e => {
+        let orderData = {
+            orderDate: e.querySelector('span[data-aid="spn-sellerorderwidget-orderdate"]').innerText,
+            orderNumber: e.querySelectorAll('.orderTitle')[2].parentElement.innerText.replace('ORDER NUMBER\n', ''),
+            cardSeller: e.querySelector('span[data-aid="spn-sellerorderwidget-vendorname"]').innerText.replace('\n', ''),
+            subTotal: e.querySelectorAll('table[data-aid="tbl-sellerorderwidget-productsinorder"] > tbody tr')[1].innerText.replace('Subtotal:\t', ''),
+            orderShipping: e.querySelectorAll('table[data-aid="tbl-sellerorderwidget-productsinorder"] > tbody tr')[2].innerText.replace('Shipping:\t', ''),
+            orderTax: e.querySelectorAll('table[data-aid="tbl-sellerorderwidget-productsinorder"] > tbody tr')[3].innerText.replace(/Sales Tax \([A-Za-z][A-Za-z]\):\t/, ''),
+            orderTotal: e.querySelectorAll('table[data-aid="tbl-sellerorderwidget-productsinorder"] > tbody tr')[4].innerText.replace('Total:\t', ''),
+            orderCards: []
+        };
+        //loop through HTML table elements in each orderWrap to scrape card info into array
+        orderData.orderCards = [...e.querySelectorAll("table.orderTable > tbody tr")].map(j => ({
+            cardName: j.querySelector('.orderHistoryItems').innerText.replace(/\n.*/, ''),
+            setName: j.querySelector('.orderHistoryItems').innerText.replace(/.*\n/, ''),
+            cardQty: j.querySelector('td.orderHistoryQuantity').innerText,
+            priceEach: j.querySelector('td.orderHistoryPrice').innerText,
+            cardCond: e.querySelector('td.orderHistoryDetail').innerText.replace(/.*\nCondition: /, ''),
+            cardFinish: e.querySelector('td.orderHistoryDetail').innerText.includes('Foil') ? 'Foil' : 'Non-foil'
+        }));
+        return orderData;
+    });
 
-    const ordersHTML = [...document.getElementsByClassName("orderWrap")].map(e => ({
-        orderDate: e.querySelector('span[data-aid="spn-sellerorderwidget-orderdate"]').innerText,
-        orderNumber: e.querySelectorAll('.orderTitle')[2].parentElement.innerText.replace('ORDER NUMBER\n', ''),
-        cardName: e.querySelectorAll('.orderHistoryItems')[1].innerText.replace(/\n.*/, ''),
-        setName: e.querySelectorAll('.orderHistoryItems')[1].innerText.replace(/.*\n/, ''),
-        cardQty: e.querySelector('td.orderHistoryQuantity').innerText,
-        priceEach: e.querySelector('td.orderHistoryPrice').innerText,
-        priceTotal: '',
-        oderShipping: e.querySelectorAll('table[data-aid="tbl-sellerorderwidget-productsinorder"] > tbody tr')[2].innerText.replace('Shipping:\t', ''),
-        orderTax: e.querySelectorAll('table[data-aid="tbl-sellerorderwidget-productsinorder"] > tbody tr')[3].innerText.replace(/Sales Tax \([A-Za-z][A-Za-z]\):\t/, ''),
-        cardCond: e.querySelector('td.orderHistoryDetail').innerText.replace(/.*\nCondition: /, ''),
-        cardFinish: e.querySelector('td.orderHistoryDetail').innerText.includes('Foil') ? 'foil' : 'non-foil',
-        orderTotal: e.querySelectorAll('table[data-aid="tbl-sellerorderwidget-productsinorder"] > tbody tr')[4].innerText.replace('Total:\t', '')
-    }));
-    
-    console.log(orders);
     console.log(ordersHTML);
-
 })();
-
